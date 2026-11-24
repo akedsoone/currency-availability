@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: currency_availability
+      POSTGRES_USER: currency_app
+      POSTGRES_PASSWORD: local_demo_password
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U currency_app -d currency_availability"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+
+volumes:
+  postgres-data:

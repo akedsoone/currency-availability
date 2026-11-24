@@ -1,0 +1,45 @@
+@model HistoryPage
+@using System.Globalization
+@{
+    ViewData["Title"] = "Статистика";
+}
+<div class="page-heading">
+    <h1>Статистика наличия</h1>
+    <p>Доля времени, которую занял каждый уровень наличия валюты.</p>
+</div>
+
+<form class="filter-panel stats-filters" method="get" asp-action="Statistics">
+    <div class="field">
+        <label for="departmentId">Отделение</label>
+        <select id="departmentId" name="departmentId" asp-items="Model.Departments"></select>
+    </div>
+    <div class="field">
+        <label for="currencyId">Валюта</label>
+        <select id="currencyId" name="currencyId" asp-items="Model.Currencies"></select>
+    </div>
+    <partial name="_PeriodField" model="Model.Days" />
+    <button type="submit">Показать</button>
+</form>
+
+<section class="panel stats-panel">
+    <div class="section-heading">
+        <h2>@Model.Department.Name · @Model.Currency.Code</h2>
+        <a class="text-link" asp-action="Details" asp-route-id="@Model.Department.Id" asp-route-currencyId="@Model.Currency.Id" asp-route-days="@Model.Days">К графику →</a>
+    </div>
+    <p class="period-caption">@Model.Start.AddHours(3).ToString("dd.MM.yyyy HH:mm") – @Model.End.AddHours(3).ToString("dd.MM.yyyy HH:mm") (Минск)</p>
+
+    <div class="stats-list">
+        @foreach (var share in Model.Shares)
+        {
+            var percent = share.Percent.ToString("0.00", CultureInfo.GetCultureInfo("ru-RU"));
+            <div class="stat-row">
+                <span class="level @AvailabilityLabels.Key(share.Level)">@AvailabilityLabels.Text(share.Level)</span>
+                <div class="share-track" aria-hidden="true">
+                    <div class="share-fill @AvailabilityLabels.Key(share.Level)" style="width:@share.Percent.ToString("0.##", CultureInfo.InvariantCulture)%"></div>
+                </div>
+                <strong>@percent %</strong>
+            </div>
+        }
+    </div>
+    <p class="chart-note">Каждый замер учитывается до следующего, максимум пять минут. Остальное время входит в «Нет данных».</p>
+</section>

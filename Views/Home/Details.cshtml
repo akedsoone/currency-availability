@@ -1,0 +1,30 @@
+@model HistoryPage
+@{
+    ViewData["Title"] = Model.Department.Name;
+}
+<a class="back-link" asp-action="Index" asp-route-currencyId="@Model.Currency.Id" asp-route-cityId="@Model.Department.CityId">← К отделениям</a>
+<div class="page-heading">
+    <h1>@Model.Department.Name</h1>
+    <p>@Model.Department.City.Name, @Model.Department.Address</p>
+</div>
+
+<form class="filter-panel detail-filters" method="get" asp-action="Details" asp-route-id="@Model.Department.Id">
+    <div class="field">
+        <label for="currencyId">Валюта</label>
+        <select id="currencyId" name="currencyId" asp-items="Model.Currencies"></select>
+    </div>
+    <partial name="_PeriodField" model="Model.Days" />
+    <button type="submit">Показать</button>
+</form>
+
+<section class="panel chart-panel">
+    <div class="section-heading">
+        <h2>История наличия · @Model.Currency.Code</h2>
+        <a class="text-link" asp-action="Statistics" asp-route-departmentId="@Model.Department.Id" asp-route-currencyId="@Model.Currency.Id" asp-route-days="@Model.Days">К статистике →</a>
+    </div>
+    <partial name="_HistoryChart" model="Model" />
+</section>
+
+@section Scripts {
+    <script src="~/js/history.js" asp-append-version="true" defer></script>
+}

@@ -1,0 +1,22 @@
+@model HistoryPage
+@using System.Text.Json
+
+@if (Model.Intervals.Count == 0)
+{
+    <p class="empty">За выбранный период данных нет.</p>
+}
+else
+{
+    var chartData = JsonSerializer.Serialize(new
+    {
+        Model.Start,
+        Model.End,
+        Model.Days,
+        Currency = Model.Currency.Code,
+        Model.Intervals
+    }, JsonSerializerOptions.Web);
+    <div class="chart-frame">
+        <canvas id="availability-chart" role="img" aria-label="График наличия @Model.Currency.Code по времени Минска. Пропуски замеров отмечены разрывами."></canvas>
+    </div>
+    <script id="chart-data" type="application/json">@Html.Raw(chartData)</script>
+}

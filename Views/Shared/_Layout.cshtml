@@ -1,0 +1,47 @@
+@using CurrencyAvailability.Services
+@using Microsoft.Extensions.Options
+@inject IOptions<BankApiOptions> BankOptions
+@{
+    var statistics = Context.Request.Path.StartsWithSegments("/statistics");
+    var dashboard = ViewData["Dashboard"] is true;
+    var latest = ViewData["LatestMeasurement"] as DateTime?;
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] · Мониторинг валюты</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="topbar">
+        <div class="shell topbar-inner">
+            <a class="brand" asp-controller="Home" asp-action="Index">
+                <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m9 8-2-5 5 1 5-1-2 5m-6 0h6m-6 0c-3 2.5-5 5.5-5 8.5 0 3 2.5 4.5 8 4.5s8-1.5 8-4.5c0-3-2-6-5-8.5" />
+                </svg>
+                Мониторинг валюты
+            </a>
+            <nav aria-label="Основная навигация">
+                <a class="@(!statistics ? "active" : "")" aria-current="@(!statistics ? "page" : null)" asp-controller="Home" asp-action="Index">Отделения</a>
+                <a class="@(statistics ? "active" : "")" aria-current="@(statistics ? "page" : null)" asp-controller="Home" asp-action="Statistics">Статистика</a>
+            </nav>
+            <div class="topbar-status">
+                @if (latest.HasValue)
+                {
+                    <span>Последний замер <time title="Время Минска" datetime="@latest.Value.ToString("O")">@latest.Value.AddHours(3).ToString("dd.MM HH:mm")</time></span>
+                }
+                @if (BankOptions.Value.IsDemo)
+                {
+                    <span class="demo-label">Демо-данные</span>
+                }
+            </div>
+        </div>
+    </header>
+    <main class="@(dashboard ? null : "shell main-content")">
+        @RenderBody()
+    </main>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

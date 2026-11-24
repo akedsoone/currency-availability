@@ -1,0 +1,138 @@
+@model DepartmentPage
+@{
+    ViewData["Title"] = "Отделения";
+    ViewData["Dashboard"] = true;
+    ViewData["LatestMeasurement"] = Model.Cards.SelectMany(card => card.Statuses).Max(status => status.MeasuredAt);
+    var history = Model.History;
+    var periods = new[] { (Days: 1, Text: "День"), (Days: 7, Text: "Неделя"), (Days: 30, Text: "Месяц") };
+}
+
+<h1 class="visually-hidden">Наличие валюты</h1>
+
+<form class="dashboard-filters" method="get" asp-action="Index">
+    <input type="hidden" name="currencyId" value="@Model.CurrencyId" />
+    <input type="hidden" name="departmentId" value="@(history?.Department.Id)" />
+    <input type="hidden" name="historyCurrencyId" value="@(history?.Currency.Id)" />
+    <input type="hidden" name="days" value="@(history?.Days ?? 1)" />
+    <div class="shell filter-row">
+        <nav class="pills" aria-label="Фильтр по валюте">
+            <span class="filter-label">Валюта</span>
+            <a class="pill @(Model.CurrencyId is null ? "selected" : "")" aria-current="@(Model.CurrencyId is null ? "true" : null)"
+               asp-action="Index" asp-route-cityId="@Model.CityId" asp-route-q="@Model.Query" asp-route-departmentId="@(history?.Department.Id)"
+               asp-route-historyCurrencyId="@(history?.Currency.Id)" asp-route-days="@(history?.Days)">Все</a>
+            @foreach (var currency in Model.Currencies)
+            {
+                var active = Model.CurrencyId == currency.Id;
+                <a class="pill @(active ? "selected" : "")" aria-current="@(active ? "true" : null)"
+                   asp-action="Index" asp-route-cityId="@Model.CityId" asp-route-q="@Model.Query"
+                   asp-route-departmentId="@(history?.Department.Id)" asp-route-currencyId="@currency.Id" asp-route-days="@(history?.Days)">@currency.Code</a>
+            }
+        </nav>
+
+        <div class="inline-field">
+            <label for="cityId">Город</label>
+            <select id="cityId" name="cityId" asp-items="Model.Cities" onchange="this.form.requestSubmit()"><option value="">Все города</option></select>
+        </div>
+    </div>
+    <div class="search-bar">
+        <div class="shell search-row">
+            <button type="submit" class="search-button" aria-label="Найти отделение">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                    <circle cx="8.5" cy="8.5" r="4.8" /><path d="m12 12 4 4" />
+                </svg>
+            </button>
+            <label for="q" class="visually-hidden">Поиск по названию или адресу</label>
+            <input type="search" id="q" name="q" value="@Model.Query" maxlength="100" placeholder="Поиск по названию или адресу…" />
+        </div>
+    </div>
+</form>
+
+<div class="legend-bar">
+    <div class="shell legend" role="group" aria-label="Уровни наличия">
+        <span class="legend-title">Уровень наличия</span>
+        @foreach (var level in Enum.GetValues<AvailabilityLevel>())
+        {
+            <span class="legend-item"><partial name="_CoinIcon" model="level" /> @AvailabilityLabels.Text(level)</span>
+        }
+    </div>
+</div>
+
+<div class="dashboard">
+    <section class="department-column" aria-label="Отделения">
+        @if (Model.Cards.Count == 0)
+        {
+            <p class="empty">По этим параметрам отделения не найдены.</p>
+        }
+        <div class="department-list">
+            @foreach (var card in Model.Cards)
+            {
+                var active = history?.Department.Id == card.Department.Id;
+                <article class="department-card @(active ? "selected" : "")">
+                    <a class="department-link" aria-current="@(active ? "true" : null)" asp-action="Index" asp-fragment="history"
+                       asp-route-cityId="@Model.CityId" asp-route-currencyId="@Model.CurrencyId" asp-route-q="@Model.Query"
+                       asp-route-departmentId="@card.Department.Id" asp-route-historyCurrencyId="@(history?.Currency.Id)" asp-route-days="@(history?.Days)">
+                        <h2>@card.Department.Name</h2>
+                        <span class="address">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
+                                <path d="M8 14s4.5-4.5 4.5-7.5a4.5 4.5 0 1 0-9 0C3.5 9.5 8 14 8 14Z" /><circle cx="8" cy="6.5" r="1.5" />
+                            </svg>
+                            @card.Department.City.Name, @card.Department.Address
+                        </span>
+                        <div class="statuses">
+                            @foreach (var status in card.Statuses)
+                            {
+                                <span class="currency-tag" title="@AvailabilityLabels.Text(status.Level)">
+                                    <strong>@status.Currency.Code</strong>
+                                    <partial name="_CoinIcon" model="status.Level" />
+                                    <span class="visually-hidden">@AvailabilityLabels.Text(status.Level)</span>
+                                </span>
+                            }
+                        </div>
+                    </a>
+                </article>
+            }
+        </div>
+    </section>
+
+    @if (history is not null)
+    {
+        <section class="dashboard-history" id="history" aria-labelledby="history-heading">
+            <div class="section-heading">
+                <h2 id="history-heading">@history.Department.Name</h2>
+                <div class="history-links">
+                    <a class="text-link" asp-action="Statistics" asp-route-departmentId="@history.Department.Id"
+                       asp-route-currencyId="@history.Currency.Id" asp-route-days="@history.Days">Статистика</a>
+                    <a class="history-close" aria-label="Закрыть историю" asp-action="Index"
+                       asp-route-cityId="@Model.CityId" asp-route-currencyId="@Model.CurrencyId" asp-route-q="@Model.Query">×</a>
+                </div>
+            </div>
+            <p class="history-subtitle">История наличия валюты</p>
+
+            <div class="history-filters">
+                <nav class="pills" aria-label="Валюта графика">
+                    @foreach (var currency in Model.Currencies)
+                    {
+                        var active = history.Currency.Id == currency.Id;
+                        <a class="pill @(active ? "selected" : "")" aria-current="@(active ? "true" : null)" asp-action="Index" asp-fragment="history"
+                           asp-route-cityId="@Model.CityId" asp-route-currencyId="@Model.CurrencyId" asp-route-q="@Model.Query"
+                           asp-route-departmentId="@history.Department.Id" asp-route-historyCurrencyId="@currency.Id" asp-route-days="@history.Days">@currency.Code</a>
+                    }
+                </nav>
+                <nav class="pills" aria-label="Период графика">
+                    @foreach (var period in periods)
+                    {
+                        var active = history.Days == period.Days;
+                        <a class="pill @(active ? "selected" : "")" aria-current="@(active ? "true" : null)" asp-action="Index" asp-fragment="history"
+                           asp-route-cityId="@Model.CityId" asp-route-currencyId="@Model.CurrencyId" asp-route-q="@Model.Query"
+                           asp-route-departmentId="@history.Department.Id" asp-route-historyCurrencyId="@history.Currency.Id" asp-route-days="@period.Days">@period.Text</a>
+                    }
+                </nav>
+            </div>
+            <partial name="_HistoryChart" model="history" />
+        </section>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/history.js" asp-append-version="true" defer></script>
+}

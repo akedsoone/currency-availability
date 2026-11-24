@@ -1,0 +1,13 @@
+@model int
+@{
+    var periods = new Dictionary<int, string> { [1] = "День", [7] = "Неделя", [30] = "Месяц" };
+}
+<div class="field">
+    <label for="days">Период</label>
+    <select id="days" name="days">
+        @foreach (var period in periods)
+        {
+            <option value="@period.Key" selected="@(period.Key == Model)">@period.Value</option>
+        }
+    </select>
+</div>
