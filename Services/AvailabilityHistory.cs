@@ -4,7 +4,6 @@ namespace CurrencyAvailability.Services;
 
 public static class AvailabilityHistory
 {
-    // Один замер описывает ближайшие пять минут. Пропущенные интервалы остаются пустыми.
     public static List<LevelInterval> BuildIntervals(List<AvailabilityRecord> records, DateTime start, DateTime end)
     {
         var intervals = new List<LevelInterval>();

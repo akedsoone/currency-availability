@@ -1,21 +1,15 @@
 using CurrencyAvailability.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 
 namespace CurrencyAvailability.Controllers;
 
 [ApiController]
-public class DemoApiController(BankCatalog catalog, IOptions<BankApiOptions> options) : ControllerBase
+public class DemoApiController(BankCatalog catalog) : ControllerBase
 {
     [HttpGet("/api/demo/availability")]
     [ResponseCache(NoStore = true)]
     public ActionResult<List<BankQuote>> GetAvailability()
     {
-        if (!options.Value.IsDemo)
-        {
-            return NotFound();
-        }
-
         var now = DateTime.UtcNow;
         var quotes = new List<BankQuote>();
         for (var department = 0; department < catalog.Departments.Count; department++)

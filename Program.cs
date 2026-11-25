@@ -7,11 +7,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
-builder.Services.AddOptions<BankApiOptions>()
-    .BindConfiguration("BankApi")
-    .Validate(options => options.IsDemo || options.HasBankUrl,
-        "Укажите режим Demo или режим Bank с URL банка и отдельным каталогом отделений.")
-    .ValidateOnStart();
 builder.Services.AddSingleton<BankCatalog>();
 builder.Services.AddHttpClient<BankApiClient>(client =>
     client.Timeout = TimeSpan.FromSeconds(20));

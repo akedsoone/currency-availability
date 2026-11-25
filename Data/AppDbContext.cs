@@ -18,9 +18,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         var records = modelBuilder.Entity<AvailabilityRecord>();
         records.HasKey(record => new { record.DepartmentId, record.CurrencyId, record.MeasuredAt });
-        records.HasIndex(record => record.MeasuredAt);
+        records.HasIndex(record => record.MeasuredAt); //быстрый поиск
         records.HasOne<Department>().WithMany().HasForeignKey(record => record.DepartmentId);
         records.HasOne<Currency>().WithMany().HasForeignKey(record => record.CurrencyId);
-        records.ToTable(table => table.HasCheckConstraint("CK_AvailabilityRecords_Level", "\"Level\" BETWEEN 0 AND 3"));
     }
 }

@@ -1,7 +1,6 @@
 using CurrencyAvailability.Models;
 using CurrencyAvailability.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace CurrencyAvailability.Data;
 
@@ -9,7 +8,6 @@ public static class DatabaseSetup
 {
     public static async Task InitializeAsync(IServiceProvider services)
     {
-        var options = services.GetRequiredService<IOptions<BankApiOptions>>().Value;
         var db = services.GetRequiredService<AppDbContext>();
         var catalog = services.GetRequiredService<BankCatalog>();
         await db.Database.EnsureCreatedAsync();
@@ -18,11 +16,6 @@ public static class DatabaseSetup
         var cities = await db.Cities.ToDictionaryAsync(item => item.Name);
         var departments = await db.Departments.ToDictionaryAsync(item => item.ExternalCode);
         var currencies = await db.Currencies.ToDictionaryAsync(item => item.Code);
-
-        if (!options.IsDemo && departments.Keys.Any(code => catalog.Departments.All(item => item.Code != code)))
-        {
-            throw new InvalidOperationException("Для другого каталога отделений используйте отдельную базу данных.");
-        }
 
         foreach (var item in catalog.Departments)
         {
@@ -56,13 +49,13 @@ public static class DatabaseSetup
 
         await db.SaveChangesAsync();
 
-        if (options.IsDemo && !await db.AvailabilityRecords.AnyAsync())
+        if (!await db.AvailabilityRecords.AnyAsync())
         {
             var departmentIds = catalog.Departments.Select(item => departments[item.Code].Id).ToArray();
             var currencyIds = catalog.Currencies.Select(item => currencies[item.Code].Id).ToArray();
             await SeedHistoryAsync(db, departmentIds, currencyIds);
         }
-
+        
         await transaction.CommitAsync();
     }
 
@@ -74,12 +67,6 @@ public static class DatabaseSetup
             var records = new List<AvailabilityRecord>();
             for (var time = day; time < day.AddDays(1); time += AvailabilityWorker.Interval)
             {
-                // Оставляем редкие пропуски, чтобы их было видно в статистике.
-                if ((time.Ticks / AvailabilityWorker.Interval.Ticks) % 389 < 4)
-                {
-                    continue;
-                }
-
                 for (var department = 0; department < departmentIds.Length; department++)
                 {
                     for (var currency = 0; currency < currencyIds.Length; currency++)
